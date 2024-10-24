@@ -1,0 +1,74 @@
+pip install ssl
+
+
+import smtplib
+import ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+import os
+
+def send_email(sender_email, receiver_email, subject, body, smtp_server, smtp_port, login, password, attachment_path=None):
+    # Create a multipart message
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+
+    # Add body to email
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Attach file if provided
+    if attachment_path:
+        with open(attachment_path, 'rb') as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header(
+                'Content-Disposition',
+                f'attachment; filename= {os.path.basename(attachment_path)}'
+            )
+            msg.attach(part)
+
+    # Convert the message to string
+    text = msg.as_string()
+
+    # Set up the secure SSL context
+    context = ssl.create_default_context()
+
+    # Connect to SMTP server and send email
+    try:
+        with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context) as server:
+            server.login(login, password)
+            server.sendmail(sender_email, receiver_email, text)
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == "__main__":
+    # User inputs
+    sender_email = input("Enter your email: ")
+    receiver_email = input("Enter recipient's email: ")
+    subject = input("Enter subject: ")
+    body = input("Enter body of the email: ")
+    attachment = input("Enter path to attachment (or press Enter to skip): ")
+    smtp_server = "smtp.gmail.com"  # Example for Gmail
+    smtp_port = 465  # For SSL
+    login = sender_email
+    password = input("Enter your email password (App password for Gmail): ")
+
+    # Send email
+    send_email(sender_email, receiver_email, subject, body, smtp_server, smtp_port, login, password, attachment if attachment else None)
+
+
+
+
+output
+Enter your email: your_email@gmail.com
+Enter recipient's email: recipient@example.com
+Enter subject: Test Email
+Enter body of the email: This is a test email.
+Enter path to attachment (or press Enter to skip): /path/to/file.txt
+Enter your email password (App password for Gmail): **********
+Email sent successfully!
